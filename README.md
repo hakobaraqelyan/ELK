@@ -3,8 +3,10 @@ Tasks:
     2. Create Docker compose file which will deploy Elasticsearch + logstash + kibana and configure all 3
     3. Collect logs from syslog and auth.log
 
+Demo OS: Ubuntu (syslog/auth.log paths)
+
 files structure
-ELK/
+/opt/ELK/
   docker-compose.yml
 
   elasticsearch/

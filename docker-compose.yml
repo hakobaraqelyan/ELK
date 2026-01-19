@@ -1,0 +1,4 @@
+name: elk
+
+# NOTE: Services (elasticsearch/kibana/logstash) will be added in separate feature branches.
+services: {}

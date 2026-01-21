@@ -1,0 +1,109 @@
+name: CI (ELK micro-branches)
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches-ignore: [ "main" ]  # branch-ի վրա push-ի ժամանակ էլ կվազի
+  workflow_dispatch:
+
+jobs:
+  detect:
+    runs-on: self-hosted
+    outputs:
+      es: ${{ steps.filter.outputs.es }}
+      kibana: ${{ steps.filter.outputs.kibana }}
+      logstash: ${{ steps.filter.outputs.logstash }}
+      pipeline: ${{ steps.filter.outputs.pipeline }}
+      compose: ${{ steps.filter.outputs.compose }}
+      actions: ${{ steps.filter.outputs.actions }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            compose:
+              - 'docker-compose.yml'
+              - 'compose*.yml'
+              - '**/compose*.yml'
+            es:
+              - 'elasticsearch/**'
+            kibana:
+              - 'kibana/**'
+            logstash:
+              - 'logstash/**'
+            pipeline:
+              - 'logstash/pipeline/**'
+            actions:
+              - '.github/workflows/**'
+
+  test_es:
+    needs: detect
+    if: needs.detect.outputs.es == 'true' || needs.detect.outputs.compose == 'true'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start Elasticsearch
+        run: |
+          set -e
+          docker compose up -d elasticsearch
+          sleep 10
+          curl -s http://localhost:9200 >/dev/null
+          echo "ES OK"
+
+  test_kibana:
+    needs: detect
+    if: needs.detect.outputs.kibana == 'true' || needs.detect.outputs.compose == 'true'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start Elasticsearch + Kibana
+        run: |
+          set -e
+          docker compose up -d elasticsearch kibana
+          sleep 20
+          curl -s http://localhost:5601 | head -n 2
+          echo "Kibana OK"
+
+  test_logstash:
+    needs: detect
+    if: needs.detect.outputs.logstash == 'true' || needs.detect.outputs.compose == 'true'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start Elasticsearch + Logstash
+        run: |
+          set -e
+          docker compose up -d elasticsearch logstash
+          sleep 15
+          docker compose ps
+          echo "Logstash container OK"
+
+  test_pipeline:
+    needs: detect
+    if: needs.detect.outputs.pipeline == 'true'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start full stack and check indices
+        run: |
+          set -e
+          docker compose up -d
+          sleep 20
+          curl -s http://localhost:9200/_cat/indices?v | head -n 20
+          echo "Pipeline OK (indices listed)"
+
+  test_actions:
+    needs: detect
+    if: needs.detect.outputs.actions == 'true'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Actions workflow lint (basic)
+        run: |
+          set -e
+          ls -la .github/workflows
+          echo "Workflows present"

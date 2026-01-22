@@ -14,4 +14,3 @@ services:
 
     environment:
       LS_JAVA_OPTS: "-Xms512m -Xmx512m"
-

@@ -74,6 +74,8 @@ jobs:
             fi
           done
           echo "ES OK"
+          docker compose -f elasticsearch/elasticsearch.yml down
+          echo "ES down"
 
   test_kibana:
     needs: detect
@@ -88,6 +90,8 @@ jobs:
           sleep 20
           curl -s http://localhost:5601 | head -n 2
           echo "Kibana OK"
+          docker compose -f kibana/kibana.yml down
+          echo "Kibana down"
 
   test_logstash:
     needs: detect
@@ -133,7 +137,9 @@ jobs:
           docker compose up -d
           sleep 15
           docker compose ps
-          echo "Logstash container OK"
+          echo "Elasticsearch, Kibana and Logstash container OK"
+          docker compose down
+          echo "Elasticsearch, Kibana and Logstash container down
 
   test_actions:
     needs: detect

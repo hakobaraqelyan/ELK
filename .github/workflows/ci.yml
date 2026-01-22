@@ -77,7 +77,7 @@ jobs:
       - name: Start Elasticsearch + Logstash
         run: |
           set -e
-          docker compose up -d elasticsearch logstash
+          docker compose logstash/logstash.yml up -d
           sleep 15
           docker compose ps
           echo "Logstash container OK"

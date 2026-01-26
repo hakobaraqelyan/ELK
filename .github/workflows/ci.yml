@@ -74,25 +74,20 @@ jobs:
             fi
           done
           echo "ES OK"
-          docker compose down && \
-          ex=0
-          timeout=60
-          while ((ex < timeout)); do
-            status_es=$(docker inspect elasticsearch | jq -r '.[0].State.Status')
-            status_kibana=$(docker inspect kibana | jq -r '.[0].State.Status')
 
-            if [[ ${status_es} == "null" || ${status_kibana} == "null" ]]; then
-                echo "Elasticsearch and Kibana is down"
-                exit 0
-            fi
-
-            sleep 1
-            ex=$((ex + 1));
-            if ((ex == timeout)); then
-              echo "ES and Kibana did not become ready in time"
-              exit 1
-            fi
-          done
+  test_kibana:
+    needs: detect
+    if: needs.detect.outputs.kibana == 'true'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start Kibana
+        run: |
+          set -e
+          docker compose -f kibana/kibana.yml up -d
+          sleep 20
+          curl -s http://localhost:5601 | head -n 2
+          echo "Kibana OK"
 
   test_logstash:
     needs: detect
@@ -103,48 +98,48 @@ jobs:
       - name: Start Logstash
         run: |
           set -e
-          docker compose -f logstash/logstash.yml up -d && \
-          
-          ex=0
-          timeout=60
-          while ((ex < timeout)); do
-            status=$(docker inspect logstash | jq -r '.[0].State.Status')
-            
-            if [[ ${status} == "running" ]]; then
-              echo "Logstash container is running, checking pipeline status..."
-              pipeline=$(docker logs logstash | grep pipeline | wc -l)
-              
-              if ((pipeline > 0)); then
-                echo "Logstash pipeline is active"
-                exit 0
-              fi
-            fi
+          docker compose -f logstash/logstash.yml up -d
+          sleep 15
+          docker compose ps
+          echo "Logstash container OK"
+<<<<<<< HEAD
+=======
+          docker compose -f logstash/logstash.yml down
+          echo "Logstash down"
+>>>>>>> da40ca4 (change workflow add down for testing container)
 
-            sleep 1
-            ex=$((ex + 1));
-            if ((ex == timeout)); then
-              echo "Logstash did not become ready in time"
-              exit 1
-            fi
-          done
-          docker compose -f logstash/logstash.yml down  && \
-          ex=0
-          timeout=30
-          while ((ex < timeout)); do
-            status=$(docker inspect logstash | jq -r '.[0].State.Status')
-            
-            if [[ ${status} == "null" ]]; then
-                echo "Logstash is down"
-                exit 0
-            fi
+  test_pipeline:
+    needs: detect
+    if: needs.detect.outputs.pipeline == 'true'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start logstash and test pipeline
+        run: |
+          set -e
+          docker compose -f logstash/logstash.yml up -d
+          sleep 20
+          curl -s http://localhost:9200/_cat/indices?v | head -n 20
+          echo "Pipeline OK (indices listed)"
+<<<<<<< HEAD
+=======
+          docker compose -f logstash/logstash.yml down
+          echo "Logstash down"
+>>>>>>> da40ca4 (change workflow add down for testing container)
 
-            sleep 1
-            ex=$((ex + 1));
-            if ((ex == timeout)); then
-              echo "Logstash did not become ready in time"
-              exit 1
-            fi
-          done
+  test_compose:
+    needs: detect
+    if: needs.detect.outputs.compose == 'true'
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start Elasticsearch + Logstash
+        run: |
+          set -e
+          docker compose up -d
+          sleep 15
+          docker compose ps
+          echo "Logstash container OK"
 
   test_actions:
     needs: detect

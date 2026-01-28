@@ -4,3 +4,6 @@ server.port: 5601
 
 elasticsearch.hosts: ["http://elasticsearch:9200"]
 
+elasticsearch.username: "kibana_system"
+elasticsearch.password:  "_Zn30RSDE8NTuSwsmNk1" 
+

@@ -4,3 +4,5 @@
 - pipeline.id: beats_pipeline
   path.config: "/usr/share/logstash/pipeline/beats.conf"
 
+#- pipeline.id: test_connection
+#  path.config: "/usr/share/logstash/pipeline/test-con.conf"

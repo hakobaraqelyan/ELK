@@ -1,5 +1,5 @@
 cluster.name: elk-cluster
-node.name: es01
+node.name: elasticsearch
 
 network.host: 0.0.0.0
 http.port: 9200

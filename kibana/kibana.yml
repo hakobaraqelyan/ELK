@@ -3,4 +3,6 @@ server.host: "0.0.0.0"
 server.port: 5601
 
 elasticsearch.hosts: ["http://elasticsearch:9200"]
-
+  #elasticsearch connect user
+elasticsearch.username: "kibana_system"
+elasticsearch.password: "${KIBANA_SYSTEM_PASSWORD}"

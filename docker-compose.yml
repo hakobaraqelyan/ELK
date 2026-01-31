@@ -1,19 +1,14 @@
-# NOTE: Services (elasticsearch/kibana/logstash) will be added in separate feature branches.
 name: elk
 
 services:
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
     container_name: elasticsearch
     environment:
-        - discovery.type=single-node
-        #  - xpack.security.enabled=false
-        - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
-        - ES_JAVA_OPTS=-Xms1g -Xmx1g
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
     volumes:
       - ./elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
       - esdata:/usr/share/elasticsearch/data
@@ -21,18 +16,50 @@ services:
       - "9200:9200"
     networks:
       - elk
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  elk-init:
+    image: curlimages/curl:8.5.0
+    container_name: elk-init
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - KIBANA_SYSTEM_PASSWORD=${KIBANA_SYSTEM_PASSWORD}
+    command: >
+      sh -c "
+      echo 'Waiting ES...' &&
+      curl -s -u elastic:$ELASTIC_PASSWORD http://elasticsearch:9200 >/dev/null &&
+      echo 'Setting kibana_system password' &&
+      curl -s -u elastic:$ELASTIC_PASSWORD
+      -X POST http://elasticsearch:9200/_security/user/kibana_system/_password
+      -H 'Content-Type: application/json'
+      -d '{\"password\":\"'$KIBANA_SYSTEM_PASSWORD'\"}' &&
+      echo 'Init done'
+      "
+    networks:
+      - elk
+    restart: "no"
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.15.0
     container_name: kibana
-    environment: 
-        - KIBANA_SYSTEM_PASSWORD=${KIBANA_SYSTEM_PASSWORD}
+    depends_on:
+      elk-init:
+        condition: service_completed_successfully
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=${KIBANA_SYSTEM_PASSWORD}
     volumes:
       - ./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
     ports:
       - "5601:5601"
-    depends_on:
-      - elasticsearch
     networks:
       - elk
 
@@ -58,4 +85,6 @@ volumes:
 
 networks:
   elk:
+
+
 

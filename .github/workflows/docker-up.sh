@@ -16,10 +16,10 @@ while ((  WAIT_TIME < TIMEOUT)); do
     ${status_logstash} == "running" ]]; then
     echo "ES and kibana containers are running"
 
-    status_es=$(curl -s -u "elastic:5ZvRt7sQt5SCyj5T2d4s" http://localhost:9200/_cluster/health | jq -r '.status')
+    status_es=$(curl -s -u "elastic:${ELASTIC_PASSWORD}" http://localhost:9200/_cluster/health | jq -r '.status')
     status_kibana=$(curl -s http://localhost:5601/api/status | jq -r '.status.overall.level')
     status_logstash=$(curl -s -o /dev/null -w "%{http_code}\n" http://localhost:9600)
-    status_logstash_index=$(curl -s -u elastic:5ZvRt7sQt5SCyj5T2d4s "http://localhost:9200/host-syslog-*/_count" | jq '.count')
+    status_logstash_index=$(curl -s -u elastic:${ELASTIC_PASSWORD} "http://localhost:9200/host-syslog-*/_count" | jq '.count')
 
     echo "ES status: ${status_es}"
     echo "Kibana status: ${status_kibana}"

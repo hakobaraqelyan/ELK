@@ -32,10 +32,10 @@ while ((  WAIT_TIME < TIMEOUT)); do
     ((${status_logstash_index} > 0)) &&
     ${status_logstash} == 200 ]]; then
     
-    echo "Elasticsearch is ready with status: ${status_es}"
-    echo "Kibana is ready with status: ${status_kibana}"
-    echo "Logstash is ready with workers: ${status_logstash}"
-    exit 0
+      echo "Elasticsearch is ready with status: ${status_es}"
+      echo "Kibana is ready with status: ${status_kibana}"
+      echo "Logstash is ready with workers: ${status_logstash}"
+      exit 0
     fi
   fi
 

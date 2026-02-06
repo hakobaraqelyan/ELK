@@ -25,3 +25,8 @@ docker exec -it elasticsearch \
   curl "http://elasticsearch:9200/host-syslog-*/_count?pretty"
 
 Если count > 0 — всё работает.
+
+Проверка в logstash:
+
+docker exec -it logstash bash
+echo $ELASTIC_PASSWORD

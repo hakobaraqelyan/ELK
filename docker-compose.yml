@@ -68,6 +68,9 @@ services:
     container_name: logstash
     depends_on:
       - elasticsearch
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
     volumes:
       - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
       - ./logstash/pipelines.yml:/usr/share/logstash/config/pipelines.yml:ro

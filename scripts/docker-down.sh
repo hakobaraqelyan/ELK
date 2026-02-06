@@ -14,6 +14,7 @@ CHECK_INTERVAL=5
 
   sleep ${CHECK_INTERVAL}
   WAIT_TIME=$((  WAIT_TIME + 1));
+  
   if ((  WAIT_TIME == TIMEOUT)); then
     echo "ES, Kibana and Logstash did not become ready in time"
     exit 1

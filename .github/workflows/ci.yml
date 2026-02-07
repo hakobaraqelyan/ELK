@@ -24,7 +24,6 @@ jobs:
           KIBANA_SYSTEM_PASSWORD: ${{ secrets.KIBANA_SYSTEM_PASSWORD }}
         run: |
           set -e
-          docker compose up -d && \
           chmod +x ./scripts/check-container.sh && \
           chmod +x ./scripts/check-workers.sh && \
           ./scripts/check-container.sh -n elasticsearch kibana logstash
@@ -32,6 +31,5 @@ jobs:
       - name: Run down script
         run: |
           set -e
-          docker compose down --remove-orphans --volumes && \
           chmod +x ./scripts/check-container.sh && \
           ./scripts/check-container.sh -c down --remove-orphans --volumes

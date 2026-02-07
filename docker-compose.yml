@@ -39,7 +39,7 @@ services:
       curl -s -u elastic:$ELASTIC_PASSWORD
       -X POST http://elasticsearch:9200/_security/user/kibana_system/_password
       -H 'Content-Type: application/json'
-      -d '{\"password\":"\'$KIBANA_SYSTEM_PASSWORD'\"}' &&
+      -d '{\"password\":\"'$KIBANA_SYSTEM_PASSWORD'\"}' &&
       echo 'Init done'
       "
     networks:

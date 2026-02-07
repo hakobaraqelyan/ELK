@@ -21,9 +21,8 @@ jobs:
       - name: Install jq
         run: |
           if ! command -v jq >/dev/null 2>&1; then
-            echo "${{ secrets.USER_PASSWORD }}" | sudo visudo
-            apt-get update
-            apt-get install -y jq
+            echo "${{ secrets.USER_PASSWORD }}" | apt-get update
+            echo "${{ secrets.USER_PASSWORD }}" | sudo -S apt install jq -y
           fi
       - name: Start Elasticsearch, Kibana and Logstash
         env:

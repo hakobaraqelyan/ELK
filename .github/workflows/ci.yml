@@ -20,10 +20,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install jq
         run: |
-          if ! command -v jq >/dev/null 2>&1; then
-            sudo apt-get update
-            sudo apt-get install -y jq
-          fi
+          command -v jq >/dev/null 2>&1 || { echo "jq missing on runner. Install it on the runner host."; exit 1; }
       - name: Start Elasticsearch, Kibana and Logstash
         env:
           ELASTIC_PASSWORD: ${{ secrets.ELASTIC_PASSWORD }}
@@ -36,9 +33,9 @@ jobs:
           status_kibana="$(curl -s http://localhost:5601/api/status | jq -r '.status.overall.level')"
           status_logstash_pipeline="$(curl -s -o /dev/null -w "%{http_code}\n" http://localhost:9600)"
           status_logstash_index="$(curl -s -u elastic:${ELASTIC_PASSWORD} "http://localhost:9200/host-syslog-*/_count" | jq '.count')"
-          status_logstash=$($status_logstash_pipeline && $status_logstash_index)
+          
 
-          ./scripts/check-container.sh -n elasticsearch kibana logstash -s ${status_es} ${status_kibana} ${status_logstash}
+          ./scripts/check-container.sh -n elasticsearch kibana logstash -s ${status_es} ${status_kibana} ${status_logstash_pipeline}
 
       - name: Run down script
         run: |

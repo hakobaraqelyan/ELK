@@ -18,14 +18,14 @@ status_working=()
 
 usage() {
   echo "Usage:"
-  echo "  $0 -n <containers...> [-s <statuses...>] [-sw <codes...>]"
+  echo "  $0 -n <containers...> [-s <statuses...>] [-i <interval>] [-t <timer>] [-c <command>]"
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -c) command="${2:-}"; shift 2 ;;
     -t) timer="${2:-}"; shift 2 ;;
-    -w) interval="${2:-}"; shift 2 ;;
+    -i) interval="${2:-}"; shift 2 ;;
 
     -n)
       shift
@@ -39,14 +39,6 @@ while [[ $# -gt 0 ]]; do
       shift
       while [[ $# -gt 0 && ! "$1" =~ ^- ]]; do
         statuses+=("$1")
-        shift
-      done
-      ;;
-
-    -sw)
-      shift
-      while [[ $# -gt 0 && ! "$1" =~ ^- ]]; do
-        status_working+=("$1")
         shift
       done
       ;;
@@ -106,35 +98,12 @@ check_containers() {
   echo "$status_container"
   if [[ ${status_container} == ${statuses} ]]; then
     echo "Container $container is running"
-
-    if check_container_workers "$container" "$status_working"; then
-      return 0
-    else
-      return 1
-    fi
+    return 0
   fi
   return 1
 }
 
-# check_container_workers() {
-#   local container="$1"
-#   local status_working="$2"
 
-    
-
-#     echo "status working container: $status_working"
-      
-#   if [[ "$status_working" ]]; then
-  
-#     echo "container is ready with status: ${status_working}"
-
-#     return 0
-#   fi
-
-#   return 1
-# }
-
-source ./scripts/check-workers.sh
 
 wait_time=0
 index=0

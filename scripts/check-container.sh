@@ -116,30 +116,33 @@ check_containers() {
   return 1
 }
 
-check_container_workers() {
-  local container="$1"
-  local status_working="$2"
+# check_container_workers() {
+#   local container="$1"
+#   local status_working="$2"
 
     
 
-    echo "status working container: ${status_working}"
+#     echo "status working container: $status_working"
       
-  if [[ ${status_working} ]]; then
+#   if [[ "$status_working" ]]; then
   
-    echo "container is ready with status: ${status_working}"
+#     echo "container is ready with status: ${status_working}"
 
-    return 0
-  fi
+#     return 0
+#   fi
 
-  return 1
-}
+#   return 1
+# }
+
+source ./scripts/check-workers.sh
 
 wait_time=0
 index=0
 
+echo "containers is ${command}"
+docker compose ${command}
+
 while ((  wait_time < timer)); do
-  echo "containers is ${command}"
-  docker compose ${command} &> /dev/null
 
   if [[ ${command} == "up -d" ]]; then
     

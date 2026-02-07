@@ -26,13 +26,8 @@ jobs:
           set -e
           docker compose up -d && \
           chmod +x ./scripts/check-container.sh && \
-          status_es="$(curl -s -u "elastic:${ELASTIC_PASSWORD}" http://localhost:9200/_cluster/health | jq -r '.status')"
-          status_kibana="$(curl -s http://localhost:5601/api/status | jq -r '.status.overall.level')"
-          status_logstash_pipeline="$(curl -s -o /dev/null -w "%{http_code}\n" http://localhost:9600)"
-          status_logstash_index="$(curl -s -u elastic:${ELASTIC_PASSWORD} "http://localhost:9200/host-syslog-*/_count" | jq '.count')"
-          
-
-          ./scripts/check-container.sh -n elasticsearch kibana logstash -s ${status_es} ${status_kibana} ${status_logstash_pipeline}
+          chmod +x ./scripts/check-workers.sh && \
+          ./scripts/check-container.sh -n elasticsearch kibana logstash
 
       - name: Run down script
         run: |

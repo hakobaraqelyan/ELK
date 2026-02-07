@@ -7,6 +7,7 @@ check_container_workers() {
   status_logstash_index=$(curl -s -u elastic:${ELASTIC_PASSWORD} "http://localhost:9200/host-syslog-*/_count" | jq '.count')
   local container="$1"
   local status_working="$2"
+  
 
     echo "status working container: $status_working"
 

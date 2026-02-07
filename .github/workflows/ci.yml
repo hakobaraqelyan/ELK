@@ -25,7 +25,6 @@ jobs:
         run: |
           set -e
           chmod +x ./scripts/check-container.sh && \
-          chmod +x ./scripts/check-workers.sh && \
           ./scripts/check-container.sh -n elasticsearch kibana logstash
       
       - name: Check if containers are working

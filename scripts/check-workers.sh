@@ -64,8 +64,8 @@ for ((i=${#statuses_working[@]}; i<c_len; i++)); do
   statuses_working+=("$default_status_working")
 done
 
-echo "containers: ${containers[@]}"
-echo "statuses: ${statuses[@]}"
+echo "containers: ${containers[@]} len: ${#containers[@]}"
+echo "statuses: ${statuses[@]} len: ${#statuses[@]}"
 echo "statuses_working: ${statuses_working[@]}"
 echo "interval: ${interval}"
 echo "timer: ${timer}"

@@ -1,0 +1,40 @@
+name: CI (ELK micro-branches)
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches-ignore: [ "main" ]  # branch-ի վրա push-ի ժամանակ էլ կվազի
+  workflow_dispatch:
+
+jobs:
+  detect:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+  test_es:
+    needs: detect
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start Elasticsearch, Kibana and Logstash
+        env:
+          ELASTIC_PASSWORD: ${{ secrets.ELASTIC_PASSWORD }}
+          KIBANA_SYSTEM_PASSWORD: ${{ secrets.KIBANA_SYSTEM_PASSWORD }}
+        run: |
+          set -e
+          status_es="-s -u "elastic:${ELASTIC_PASSWORD}" http://localhost:9200/_cluster/health | jq -r '.status'"
+          status_kibana="-s http://localhost:5601/api/status | jq -r '.status.overall.level'"
+          status_logstash_pipeline="-s -o /dev/null -w "%{http_code}\n" http://localhost:9600"
+          status_logstash_index="-s -u elastic:${ELASTIC_PASSWORD} "http://localhost:9200/host-syslog-*/_count\" | jq '.count'"
+          
+          chmod +x ./scripts/check-container.sh && \
+          chmod +x ./scripts/check-workers.sh && \
+          ./scripts/check-container.sh -n elasticsearch kibana logstash -sw "$status_es" "$status_kibana" "$status_logstash_pipeline" "$status_logstash_index" -c "up -d"
+
+      - name: Run down script
+        run: |
+          set -e
+          chmod +x ./scripts/check-container.sh && \
+          ./scripts/check-container.sh -c down --remove-orphans --volumes

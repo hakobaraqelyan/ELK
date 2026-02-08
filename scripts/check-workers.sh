@@ -87,7 +87,7 @@ while [[ $wait_time -lt $timer ]]; do
   
   echo "Checking container ${containers[index]} with expected status: ${statuses[index]}"
 
-  if [[ (( "${statuses[index]}" == "${statuses_working[index]}" )) ]]; then
+  if [[ (( ""$statuses[index]"" == "${statuses_working[index]}" )) ]]; then
     echo "container ${containers[index]} is ready with status: ${statuses[index]}"
     
     index=$((index + 1))

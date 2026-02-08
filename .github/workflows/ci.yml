@@ -30,14 +30,14 @@ jobs:
       - name: Check if containers are working
         run: |
           set -e
-          status_es() { curl -s -u "elastic:${ELASTIC_PASSWORD}" http://localhost:9200/_cluster/health | jq -r '.status' } \
-          status_kibana() { curl -s http://localhost:5601/api/status | jq -r '.status.overall.level' } \
-          status_logstash_pipeline() { curl -s -o /dev/null -w "%{http_code}\n" http://localhost:9600 } \
-          status_logstash_index() { curl -s -u elastic:${ELASTIC_PASSWORD} "http://localhost:9200/host-syslog-*/_count" | jq '._shards.successful' } \
+          status_es() { return curl -s -u "elastic:${ELASTIC_PASSWORD}" http://localhost:9200/_cluster/health | jq -r '.status' } \
+          status_kibana() { return curl -s http://localhost:5601/api/status | jq -r '.status.overall.level' } \
+          status_logstash_pipeline() { return curl -s -o /dev/null -w "%{http_code}\n" http://localhost:9600 } \
+          status_logstash_index() { return curl -s -u elastic:${ELASTIC_PASSWORD} "http://localhost:9200/host-syslog-*/_count" | jq '._shards.successful' } \
           
           chmod +x ./scripts/check-workers.sh && \
           ./scripts/check-workers.sh -n elasticsearch kibana logstash-pipeline logstash-index \
-            -s $status_es $status_kibana $status_logstash_pipeline $status_logstash_index \
+            -s status_es status_kibana status_logstash_pipeline status_logstash_index \
             -sw yellow available 200 1
 
       - name: Run down script

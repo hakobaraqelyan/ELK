@@ -66,7 +66,7 @@ done
 
 echo "containers: ${containers[@]} len: ${#containers[@]}"
 echo "statuses: ${statuses[@]} len: ${#statuses[@]}"
-echo "statuses_working: ${statuses_working[@]}"
+echo "statuses_working: ${statuses_working[@]} len: ${#statuses_working[@]}"
 echo "interval: ${interval}"
 echo "timer: ${timer}"
 echo "c_len: ${c_len}"
@@ -83,30 +83,37 @@ echo "status working container: $statuses"
 index=0
 
 while [[ $wait_time -lt $timer ]]; do
-  echo "Waiting for container to be ready..."
   
+  echo "----------------------------------------"
+  echo "Waiting for container to be ready..."
   echo "Checking container ${containers[index]}"
   echo "Status: ${statuses[index]}"
+  echo "Status: ${statuses}"
   echo "Expected working status: ${statuses_working[index]}"
   echo "Wait time: ${wait_time}s / ${timer}s"
   echo "Interval: ${interval}s"
-  echo "Index: $index / $c_len"
+  echo "Index: $((index + 1)) / $c_len"
   echo "----------------------------------------"
   echo
 
-  if [[ (( "${statuses[index]}" == "${statuses_working[index]}" )) ]]; then
-    echo "container ${containers[index]} is ready with status: ${statuses[index]}"
+  item_status=$(eval "${statuses[index]}")
+
+  echo "Received status: $item_status"
+  echo
+
+  if [[ (( "$item_status" == "${statuses_working[index]}" )) ]]; then
+    echo "container ${containers[index]} is ready with status: ${item_status}"
     
     index=$((index + 1))
     if [[ $index -ge $c_len ]]; then
       echo "All containers are ready."
       exit 0
     fi
-    return 0
+  else
+    sleep "$interval"
+    wait_time=$((wait_time + interval))
   fi
   
-  sleep "$interval"
-  wait_time=$((wait_time + interval))
 done
 echo "Error: Timeout reached. Container is not ready."
 exit 1

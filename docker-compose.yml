@@ -29,8 +29,8 @@ services:
       elasticsearch:
         condition: service_healthy
     environment:
-      - ELASTIC_PASSWORD=${{ secrets.ELASTIC_PASSWORD }}
-      - KIBANA_SYSTEM_PASSWORD=${{ secrets.KIBANA_SYSTEM_PASSWORD }}
+      ELASTIC_PASSWORD: ${{ secrets.ELASTIC_PASSWORD }}
+      KIBANA_SYSTEM_PASSWORD: ${{ secrets.KIBANA_SYSTEM_PASSWORD }}
     command: >
       sh -c "
       echo 'Waiting ES...' &&

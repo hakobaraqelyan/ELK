@@ -41,7 +41,7 @@ jobs:
           chmod +x ./scripts/check-workers.sh && \
           ./scripts/check-workers.sh -n elasticsearch kibana logstash-pipeline logstash-index \
             -s "$status_es" "$status_kibana" "$status_logstash_pipeline" "$status_logstash_index" \
-            -sw yellow available 200n 1
+            -sw green available 200n 1
 
       - name: Run down script
         run: |

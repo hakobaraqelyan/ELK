@@ -39,10 +39,10 @@ jobs:
           chmod +x ./scripts/check-workers.sh && \
           ./scripts/check-workers.sh -n elasticsearch kibana logstash-pipeline logstash-index \
             -s "$status_es" "$status_kibana" "$status_logstash_pipeline" "$status_logstash_index" \
-            -sw yellow available 200 1
+            -sw yellow available 200n 1
 
       - name: Run down script
         run: |
           set -e
           chmod +x ./scripts/check-container.sh && \
-          ./scripts/check-container.sh -c down --remove-orphans --volumes
+          ./scripts/check-container.sh -c "down --remove-orphans --volumes"

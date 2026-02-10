@@ -40,6 +40,11 @@ services:
       -X POST http://elasticsearch:9200/_security/user/kibana_system/_password
       -H 'Content-Type: application/json'
       -d '{\"password\":\"'$$KIBANA_SYSTEM_PASSWORD'\"}' &&
+      echo 'Setting default index replicas to 0' &&
+      curl -s -u elastic:$ELASTIC_PASSWORD
+      -X PUT http://elasticsearch:9200/_settings
+      -H 'Content-Type: application/json'
+      -d '{\"index.number_of_replicas\":\"0\"}' &&
       echo 'Init done'
       "
     networks:

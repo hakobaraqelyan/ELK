@@ -4,151 +4,45 @@ on:
   pull_request:
     branches: [ "main" ]
   push:
-    branches-ignore: [ "main" ]  # branch-ի վրա push-ի ժամանակ էլ կվազի
+    branches-ignore: [ "main" ]
   workflow_dispatch:
 
 jobs:
   detect:
     runs-on: self-hosted
-    outputs:
-      es: ${{ steps.filter.outputs.es }}
-      kibana: ${{ steps.filter.outputs.kibana }}
-      logstash: ${{ steps.filter.outputs.logstash }}
-      pipeline: ${{ steps.filter.outputs.pipeline }}
-      compose: ${{ steps.filter.outputs.compose }}
-      actions: ${{ steps.filter.outputs.actions }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Detect changed paths
-        id: filter
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            compose:
-              - 'docker-compose.yml'
-              - 'compose*.yml'
-              - '**/compose*.yml'
-            es:
-              - 'elasticsearch/**'
-            kibana:
-              - 'kibana/**'
-            logstash:
-              - 'logstash/**'
-            pipeline:
-              - 'logstash/pipeline/**'
-            actions:
-              - '.github/workflows/**'
-
-  test_es:
+  run_dockers:
     needs: detect
-    if: needs.detect.outputs.es == 'true' || needs.detect.outputs.compose == 'true' || needs.detect.outputs.kibana == 'true'
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-      - name: Start Elasticsearch
+      - name: Start Elasticsearch, Kibana and Logstash
+        env:
+          ELASTIC_PASSWORD: ${{ secrets.ELASTIC_PASSWORD }}
+          KIBANA_SYSTEM_PASSWORD: ${{ secrets.KIBANA_SYSTEM_PASSWORD }}
         run: |
           set -e
-          docker compose up -d && \
-          ex=0
-          timeout=120
-          while ((ex < timeout)); do
-            status_es=$(docker inspect elasticsearch | jq -r '.[0].State.Status')
-            status_kibana=$(docker inspect kibana | jq -r '.[0].State.Status')
-
-            if [[ ${status_es} == "running" || ${status_kibana} == "running" ]]; then
-              echo "ES and kibana containers are running"
-              status_es=$(curl -s http://localhost:9200/_cluster/health | jq -r '.status')
-              status_kibana=$(curl -s http://localhost:5601/api/status | jq -r '.status.overall.state')
-              if [[ ${status_es} == "green" || ${status_es} == "yellow" || ${status_kibana} == "green" || ${status_kibana} == "yellow" ]]; then
-                echo "Elasticsearch is ready with status: ${status_es}"
-                echo "Kibana is ready with status: ${status_kibana}"
-              exit 0
-              fi
-            fi
-            sleep 1
-            ex=$((ex + 1));
-            if ((ex == timeout)); then
-              echo "Elasticsearch did not become ready in time"
-              exit 1
-            fi
-          done
-          echo "ES OK"
-          docker compose -f elasticsearch/elasticsearch.yml down
-          echo "ES down"
-
-  test_kibana:
-    needs: detect
-    if: needs.detect.outputs.kibana == 'true'
+          chmod +x ./scripts/check-container.sh && \
+          ./scripts/check-container.sh -n elasticsearch kibana logstash
+  test_dockers:
+    needs: run_dockers
     runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
-      - name: Start Kibana
-        run: |
+      - name: Check if containers are working
+        env:
+          ELASTIC_PASSWORD: ${{ secrets.ELASTIC_PASSWORD }}
+        run:   |
           set -e
-          docker compose -f kibana/kibana.yml up -d
-          sleep 20
-          curl -s http://localhost:5601 | head -n 2
-          echo "Kibana OK"
-          docker compose -f kibana/kibana.yml down
-          echo "Kibana down"
-
-  test_logstash:
-    needs: detect
-    if: needs.detect.outputs.logstash == 'true' || needs.detect.outputs.pipeline == 'true'
-    runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v4
-      - name: Start Logstash
-        run: |
-          set -e
-          docker compose -f logstash/logstash.yml up -d
-          sleep 15
-          docker compose ps
-          echo "Logstash container OK"
-          docker compose -f logstash/logstash.yml down
-          echo "Logstash down"
-
-  test_pipeline:
-    needs: detect
-    if: needs.detect.outputs.pipeline == 'true'
-    runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v4
-      - name: Start logstash and test pipeline
-        run: |
-          set -e
-          docker compose -f logstash/logstash.yml up -d
-          sleep 20
-          curl -s http://localhost:9200/_cat/indices?v | head -n 20
-          echo "Pipeline OK (indices listed)"
-          docker compose -f logstash/logstash.yml down
-          echo "Logstash down"
-
-  test_compose:
-    needs: detect
-    if: needs.detect.outputs.compose == 'true'
-    runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v4
-      - name: Start Elasticsearch + Logstash
-        run: |
-          set -e
-          docker compose up -d
-          sleep 15
-          docker compose ps
-          echo "Elasticsearch, Kibana and Logstash container OK"
-          docker compose down
-          echo "Elasticsearch, Kibana and Logstash container down
-
-  test_actions:
-    needs: detect
-    if: needs.detect.outputs.actions == 'true'
-    runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v4
-      - name: Actions workflow lint (basic)
-        run: |
-          set -e
-          ls -la .github/workflows
-          echo "Workflows present"
+          
+          status_es="curl -s -u "elastic:$ELASTIC_PASSWORD" http://localhost:9200/_cluster/health | jq -r '.status'"
+          status_kibana="curl -s http://localhost:5601/api/status | jq -r '.status.overall.level'"
+          status_logstash_pipeline="curl -s -o /dev/null -w '%{http_code}' http://localhost:9600"
+          status_logstash_index="curl -s -u elastic:$ELASTIC_PASSWORD http://localhost:9200/host-syslog-*/_count | jq '._shards.successful'"
+          
+          chmod +x ./scripts/check-workers.sh && \
+          ./scripts/check-workers.sh -n elasticsearch kibana logstash-pipeline logstash-index \
+            -s "$status_es" "$status_kibana" "$status_logstash_pipeline" "$status_logstash_index" \
+            -sw green available 200 0

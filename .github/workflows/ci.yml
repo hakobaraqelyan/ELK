@@ -46,13 +46,3 @@ jobs:
           ./scripts/check-workers.sh -n elasticsearch kibana logstash-pipeline logstash-index \
             -s "$status_es" "$status_kibana" "$status_logstash_pipeline" "$status_logstash_index" \
             -sw green available 200 0
-  down_containers:
-    needs: test_dockers
-    runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run down script
-        run: |
-          set -e
-          chmod +x ./scripts/check-container.sh && \
-          ./scripts/check-container.sh -c "down --remove-orphans --volumes"
